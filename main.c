@@ -12,6 +12,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <string.h>
 
 #define PORT 5555
 #define MAXMSG 512
@@ -59,6 +60,16 @@ int makeSocket(unsigned short int port) {
  * Reads and prints data read from the file (socket
  * denoted by the file descriptor 'fileDescriptor'.
  */
+void writeMessage(int fileDescriptor, char *message) {
+    int nOfBytes;
+
+    nOfBytes = write(fileDescriptor, message, strlen(message) + 1);
+    if(nOfBytes < 0) {
+        perror("writeMessage - Could not write data\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
 int readMessageFromClient(int fileDescriptor) {
     char buffer[MAXMSG];
     int nOfBytes;
@@ -75,6 +86,7 @@ int readMessageFromClient(int fileDescriptor) {
     else
         /* Data read */
         printf(">Incoming message: %s\n",  buffer);
+        writeMessage(fileDescriptor, "Din fule skit jag hör dig");
     return(0);
 }
 
