@@ -94,11 +94,12 @@ int main(int argc, char *argv[]) {
     int fucktard = -1;
     int sock;
     int clientSocket;
-    int i;
+    int i,j;
     fd_set activeFdSet, readFdSet; /* Used by select */
     struct sockaddr_in clientName;
     socklen_t size;
-
+    int Clients [1024];
+    int nClients = 0;
 
     /* Create a socket and set it up to accept connections */
     sock = makeSocket(PORT);
@@ -135,22 +136,27 @@ int main(int argc, char *argv[]) {
                         perror("Could not accept connection\n");
                         exit(EXIT_FAILURE);
                     }
-                    if(strcmp(inet_ntoa(clientName.sin_addr), "127.0.0.1") == 0)        //Block blacklisted IP
+                    if(strcmp(inet_ntoa(clientName.sin_addr), "127.0.2.1") == 0)        //Block blacklisted IP
                     {
-                        printf("Blacklisted IP: %s tried to connect\n", inet_ntoa(clientName.sin_addr));
                         writeMessage(clientSocket, "You are blacklisted for life mate. FUCK OFF");
                         close(clientSocket);
+                        printf("Blacklisted IP: %s tried to connect and was evicted\n", inet_ntoa(clientName.sin_addr));
+
                     }
                     else
                     {
                         printf("Server: Connect from client %s, port %d\n",
-                               inet_ntoa(clientName.sin_addr),
-                               ntohs(clientName.sin_port));
-                        if (fucktard != -1) {
-                            writeMessage(clientSocket, "Heeej???");
-                            writeMessage(fucktard, "Din fule skit jag hör dig");
+                           inet_ntoa(clientName.sin_addr),
+                           ntohs(clientName.sin_port));
+
+                        writeMessage(clientSocket, "Welcome...or not...fucktard");
+                        for(j = 0; j < nClients; j++)
+                        {
+                            writeMessage(Clients[j], "A new fucktard is here");
                         }
-                        fucktard = clientSocket;
+                    Clients[nClients] = clientSocket;
+                        nClients++;
+
                         FD_SET(clientSocket, &activeFdSet);
                     }
                 } else {
