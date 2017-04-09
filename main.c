@@ -91,6 +91,7 @@ int readMessageFromClient(int fileDescriptor) {
 }
 
 int main(int argc, char *argv[]) {
+    int fucktard = -1;
     int sock;
     int clientSocket;
     int i;
@@ -111,6 +112,7 @@ int main(int argc, char *argv[]) {
     FD_SET(sock, &activeFdSet);
 
     printf("\n[waiting for connections...]\n");
+
     while(1) {
         /* Block until input arrives on one or more active sockets
            FD_SETSIZE is a constant with value = 1024 */
@@ -118,31 +120,47 @@ int main(int argc, char *argv[]) {
         if(select(FD_SETSIZE, &readFdSet, NULL, NULL, NULL) < 0) {
             perror("Select failed\n");
             exit(EXIT_FAILURE);
+
         }
         /* Service all the sockets with input pending */
-        for(i = 0; i < FD_SETSIZE; ++i)
-            if(FD_ISSET(i, &readFdSet)) {
-                if(i == sock) {
+        for(i = 0; i < FD_SETSIZE; ++i) {
+            if (FD_ISSET(i, &readFdSet)) {
+                if (i == sock) {
                     /* Connection request on original socket */
                     size = sizeof(struct sockaddr_in);
                     /* Accept the connection request from a client. */
-                    clientSocket = accept(sock, (struct sockaddr *)&clientName, (socklen_t *)&size);
-                    if(clientSocket < 0) {
+                    clientSocket = accept(sock, (struct sockaddr *) &clientName, (socklen_t *) &size);
+
+                    if (clientSocket < 0) {
                         perror("Could not accept connection\n");
                         exit(EXIT_FAILURE);
                     }
-                    printf("Server: Connect from client %s, port %d\n",
-                           inet_ntoa(clientName.sin_addr),
-                           ntohs(clientName.sin_port));
-                    FD_SET(clientSocket, &activeFdSet);
-                }
-                else {
+                    if(strcmp(inet_ntoa(clientName.sin_addr), "127.0.0.1") == 0)        //Block blacklisted IP
+                    {
+                        printf("Blacklisted IP: %s tried to connect\n", inet_ntoa(clientName.sin_addr));
+                        writeMessage(clientSocket, "You are blacklisted for life mate. FUCK OFF");
+                        close(clientSocket);
+                    }
+                    else
+                    {
+                        printf("Server: Connect from client %s, port %d\n",
+                               inet_ntoa(clientName.sin_addr),
+                               ntohs(clientName.sin_port));
+                        if (fucktard != -1) {
+                            writeMessage(clientSocket, "Heeej???");
+                            writeMessage(fucktard, "Din fule skit jag hör dig");
+                        }
+                        fucktard = clientSocket;
+                        FD_SET(clientSocket, &activeFdSet);
+                    }
+                } else {
                     /* Data arriving on an already connected socket */
-                    if(readMessageFromClient(i) < 0) {
+                    if (readMessageFromClient(i) < 0) {
                         close(i);
                         FD_CLR(i, &activeFdSet);
                     }
                 }
             }
+        }
     }
 }
