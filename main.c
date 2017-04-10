@@ -1,7 +1,7 @@
 /* File: server.c
  * Trying out socket communication between processes using the Internet protocol family.
  */
-
+#define  blacklist "127.0.1.1"
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -69,7 +69,7 @@ void writeMessage(int fileDescriptor, char *message) {
         exit(EXIT_FAILURE);
     }
 }
-
+//reads incoming messages
 int readMessageFromClient(int fileDescriptor) {
     char buffer[MAXMSG];
     int nOfBytes;
@@ -86,12 +86,11 @@ int readMessageFromClient(int fileDescriptor) {
     else
         /* Data read */
         printf(">Incoming message: %s\n",  buffer);
-        writeMessage(fileDescriptor, "Din fule skit jag hör dig");
+        writeMessage(fileDescriptor, "I hear you");
     return(0);
 }
 
 int main(int argc, char *argv[]) {
-    int fucktard = -1;
     int sock;
     int clientSocket;
     int i,j;
@@ -136,9 +135,11 @@ int main(int argc, char *argv[]) {
                         perror("Could not accept connection\n");
                         exit(EXIT_FAILURE);
                     }
-                    if(strcmp(inet_ntoa(clientName.sin_addr), "127.0.1.1") == 0)        //Block blacklisted IP
+
+                    //compares the ip of the connected client and evict if it is the same as the one written below
+                    if(strcmp(inet_ntoa(clientName.sin_addr), blacklist) == 0)        //Block blacklisted IP
                     {
-                        writeMessage(clientSocket, "You are blacklisted for life mate. FUCK OFF!");
+                        writeMessage(clientSocket, "You are blacklisted from this server");
                         close(clientSocket);
                         printf("Blacklisted IP: %s tried to connect and was evicted\n", inet_ntoa(clientName.sin_addr));
 
@@ -149,10 +150,10 @@ int main(int argc, char *argv[]) {
                            inet_ntoa(clientName.sin_addr),
                            ntohs(clientName.sin_port));
 
-                        writeMessage(clientSocket, "Welcome...or not...fucktard");
-                        for(j = 0; j < nClients; j++)
+                        writeMessage(clientSocket, "Welcome to this server");
+                        for(j = 0; j < nClients; j++)   //goes through all clients that have connected and sends out information
                         {
-                            writeMessage(Clients[j], "A new fucktard is here");
+                            writeMessage(Clients[j], "A new client has connected");
                         }
                     Clients[nClients] = clientSocket;
                         nClients++;
