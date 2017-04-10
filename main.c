@@ -12,6 +12,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <string.h>
 
 #define PORT 5555
 #define MAXMSG 512
@@ -59,6 +60,16 @@ int makeSocket(unsigned short int port) {
  * Reads and prints data read from the file (socket
  * denoted by the file descriptor 'fileDescriptor'.
  */
+void writeMessage(int fileDescriptor, char *message) {
+    int nOfBytes;
+
+    nOfBytes = write(fileDescriptor, message, strlen(message) + 1);
+    if(nOfBytes < 0) {
+        perror("writeMessage - Could not write data\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
 int readMessageFromClient(int fileDescriptor) {
     char buffer[MAXMSG];
     int nOfBytes;
@@ -75,17 +86,20 @@ int readMessageFromClient(int fileDescriptor) {
     else
         /* Data read */
         printf(">Incoming message: %s\n",  buffer);
+        writeMessage(fileDescriptor, "Din fule skit jag hör dig");
     return(0);
 }
 
 int main(int argc, char *argv[]) {
+    int fucktard = -1;
     int sock;
     int clientSocket;
-    int i;
+    int i,j;
     fd_set activeFdSet, readFdSet; /* Used by select */
     struct sockaddr_in clientName;
     socklen_t size;
-
+    int Clients [1024];
+    int nClients = 0;
 
     /* Create a socket and set it up to accept connections */
     sock = makeSocket(PORT);
@@ -99,6 +113,7 @@ int main(int argc, char *argv[]) {
     FD_SET(sock, &activeFdSet);
 
     printf("\n[waiting for connections...]\n");
+
     while(1) {
         /* Block until input arrives on one or more active sockets
            FD_SETSIZE is a constant with value = 1024 */
@@ -106,31 +121,56 @@ int main(int argc, char *argv[]) {
         if(select(FD_SETSIZE, &readFdSet, NULL, NULL, NULL) < 0) {
             perror("Select failed\n");
             exit(EXIT_FAILURE);
+
         }
         /* Service all the sockets with input pending */
-        for(i = 0; i < FD_SETSIZE; ++i)
-            if(FD_ISSET(i, &readFdSet)) {
-                if(i == sock) {
+        for(i = 0; i < FD_SETSIZE; ++i) {
+            if (FD_ISSET(i, &readFdSet)) {
+                if (i == sock) {
                     /* Connection request on original socket */
                     size = sizeof(struct sockaddr_in);
                     /* Accept the connection request from a client. */
-                    clientSocket = accept(sock, (struct sockaddr *)&clientName, (socklen_t *)&size);
-                    if(clientSocket < 0) {
+                    clientSocket = accept(sock, (struct sockaddr *) &clientName, (socklen_t *) &size);
+
+                    if (clientSocket < 0) {
                         perror("Could not accept connection\n");
                         exit(EXIT_FAILURE);
                     }
-                    printf("Server: Connect from client %s, port %d\n",
+                    if(strcmp(inet_ntoa(clientName.sin_addr), "127.0.1.1") == 0)        //Block blacklisted IP
+                    {
+                        writeMessage(clientSocket, "You are blacklisted for life mate. FUCK OFF!");
+                        close(clientSocket);
+                        printf("Blacklisted IP: %s tried to connect and was evicted\n", inet_ntoa(clientName.sin_addr));
+
+                    }
+                    else
+                    {
+                        printf("Server: Connect from client %s, port %d\n",
                            inet_ntoa(clientName.sin_addr),
                            ntohs(clientName.sin_port));
-                    FD_SET(clientSocket, &activeFdSet);
+
+                        writeMessage(clientSocket, "Welcome...or not...fucktard");
+                        for(j = 0; j < nClients; j++)
+                        {
+                            writeMessage(Clients[j], "A new fucktard is here");
+                        }
+                    Clients[nClients] = clientSocket;
+                        nClients++;
+                        if (nClients >= 1024)
+                        {
+                            nClients = 0;
+                        }
+                        FD_SET(clientSocket, &activeFdSet);
+                    }
                 }
                 else {
                     /* Data arriving on an already connected socket */
-                    if(readMessageFromClient(i) < 0) {
+                    if (readMessageFromClient(i) < 0) {
                         close(i);
                         FD_CLR(i, &activeFdSet);
                     }
                 }
             }
+        }
     }
 }
