@@ -136,9 +136,9 @@ int main(int argc, char *argv[]) {
                         perror("Could not accept connection\n");
                         exit(EXIT_FAILURE);
                     }
-                    if(strcmp(inet_ntoa(clientName.sin_addr), "127.0.2.1") == 0)        //Block blacklisted IP
+                    if(strcmp(inet_ntoa(clientName.sin_addr), "127.0.1.1") == 0)        //Block blacklisted IP
                     {
-                        writeMessage(clientSocket, "You are blacklisted for life mate. FUCK OFF");
+                        writeMessage(clientSocket, "You are blacklisted for life mate. FUCK OFF!");
                         close(clientSocket);
                         printf("Blacklisted IP: %s tried to connect and was evicted\n", inet_ntoa(clientName.sin_addr));
 
@@ -156,10 +156,14 @@ int main(int argc, char *argv[]) {
                         }
                     Clients[nClients] = clientSocket;
                         nClients++;
-
+                        if (nClients >= 1024)
+                        {
+                            nClients = 0;
+                        }
                         FD_SET(clientSocket, &activeFdSet);
                     }
-                } else {
+                }
+                else {
                     /* Data arriving on an already connected socket */
                     if (readMessageFromClient(i) < 0) {
                         close(i);
