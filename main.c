@@ -12,9 +12,13 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <string.h>
 
 #define PORT 5555
 #define MAXMSG 512
+
+
+void writeMessage(int fileDescriptor, char *message);
 
 /* makeSocket
  * Creates and names a socket in the Internet
@@ -72,16 +76,27 @@ int readMessageFromClient(int fileDescriptor) {
     if(nOfBytes == 0)
         /* End of file */
         return(-1);
-    else
+    else {
         /* Data read */
-        printf(">Incoming message: %s\n",  buffer);
+        writeMessage(fileDescriptor, "I hear you...");
+        printf(">Incoming message: %s\n", buffer);
+   }
     return(0);
 }
+void writeMessage(int fileDescriptor, char *message) {
+    int nOfBytes;
 
+    nOfBytes = write(fileDescriptor, message, strlen(message) + 1);
+    if(nOfBytes < 0) {
+        perror("writeMessage - Could not write data\n");
+        exit(EXIT_FAILURE);
+    }
+}
 int main(int argc, char *argv[]) {
     int sock;
     int clientSocket;
-    int i;
+    int i, noClients = 0;
+    int broadcast[1024];
     fd_set activeFdSet, readFdSet; /* Used by select */
     struct sockaddr_in clientName;
     socklen_t size;
@@ -119,10 +134,23 @@ int main(int argc, char *argv[]) {
                         perror("Could not accept connection\n");
                         exit(EXIT_FAILURE);
                     }
-                    printf("Server: Connect from client %s, port %d\n",
-                           inet_ntoa(clientName.sin_addr),
-                           ntohs(clientName.sin_port));
-                    FD_SET(clientSocket, &activeFdSet);
+                    if(strcmp(inet_ntoa(clientName.sin_addr), "127.0.0.2") != 0) { //Blacklisting IP 127.0.0.2
+                        printf("Server: Connect from client %s, port %d\n",
+                               inet_ntoa(clientName.sin_addr),
+                               ntohs(clientName.sin_port));
+                        FD_SET(clientSocket, &activeFdSet);
+                        writeMessage(clientSocket, "You are now connected to the server");
+                    }
+                    else{
+                        writeMessage(clientSocket, "You are on the blacklist, good bye.\n");    //Sends a lovely message to blacklisted IP then closing
+                        close(clientSocket);
+                    }
+                    broadcast[noClients] = clientSocket;
+                    noClients++;
+                    for(int j = 0; j < noClients; j++){
+                        if(broadcast[j] != clientSocket)
+                            writeMessage(broadcast[j], "New client connected\n");
+                    }
                 }
                 else {
                     /* Data arriving on an already connected socket */
