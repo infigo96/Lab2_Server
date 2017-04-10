@@ -1,14 +1,14 @@
 /* File: server.c
  * Trying out socket communication between processes using the Internet protocol family.
  */
-#define  blacklist "127.0.1.1"
+#define  blacklist "127.0.2.1"
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/times.h>
+#include <sys/times.h>infigo
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <netdb.h>
