@@ -1,7 +1,7 @@
 /* File: server.c
  * Trying out socket communication between processes using the Internet protocol family.
  */
-#define  blacklist "127.0.2.1"
+#define  blacklist "192.168.43.39"
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
