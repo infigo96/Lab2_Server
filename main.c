@@ -32,7 +32,7 @@ int makeSocket(unsigned short int port) {
     struct sockaddr_in name;
 
     /* Create a socket. */
-    sock = socket(PF_INET, SOCK_STREAM, 0);
+    sock = socket(PF_INET, SOCK_STREAM, 0);     //TCP connection
     if(sock < 0) {
         perror("Could not create a socket\n");
         exit(EXIT_FAILURE);
@@ -56,10 +56,7 @@ int makeSocket(unsigned short int port) {
     return(sock);
 }
 
-/* readMessageFromClient
- * Reads and prints data read from the file (socket
- * denoted by the file descriptor 'fileDescriptor'.
- */
+//writeMessage writes a message to the server.
 void writeMessage(int fileDescriptor, char *message) {
     int nOfBytes;
 
@@ -69,7 +66,11 @@ void writeMessage(int fileDescriptor, char *message) {
         exit(EXIT_FAILURE);
     }
 }
-//reads incoming messages
+
+/* readMessageFromClient
+ * Reads and prints data read from the file (socket
+ * denoted by the file descriptor 'fileDescriptor'.
+ */
 int readMessageFromClient(int fileDescriptor) {
     char buffer[MAXMSG];
     int nOfBytes;
@@ -153,7 +154,10 @@ int main(int argc, char *argv[]) {
                         writeMessage(clientSocket, "Welcome to this server");
                         for(j = 0; j < nClients; j++)   //goes through all clients that have connected and sends out information
                         {
-                            writeMessage(Clients[j], "A new client has connected");
+                            if (j != clientSocket)
+                            {
+                                writeMessage(Clients[j], "A new client has connected");
+                            }
                         }
                     Clients[nClients] = clientSocket;
                         nClients++;
